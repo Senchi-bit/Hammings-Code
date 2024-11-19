@@ -1,6 +1,5 @@
 ﻿namespace HammingsCode;
 using System.Collections.Generic;
-
 public class Solver
 {
     public static List<int> GenerateRandomMessage(int k)
@@ -15,6 +14,7 @@ public class Solver
 
         return message;
     }
+
     // Вычисление количества контрольных битов
     public static int CalculateParityBits(int messageLength)
     {
@@ -25,6 +25,7 @@ public class Solver
         }
         return p;
     }
+
     // Вставка контрольных битов в нужные позиции
     public static List<int> InsertParityBits(List<int> dataBits, int p)
     {
@@ -49,11 +50,13 @@ public class Solver
 
         return hammingCode;
     }
+
     // Проверка, является ли число степенью двойки
     public static bool IsPowerOfTwo(int x)
     {
         return (x & (x - 1)) == 0;
     }
+
     // Расчет значений контрольных битов
     public static void CalculateCheckBits(List<int> hammingCode)
     {
@@ -78,7 +81,7 @@ public class Solver
             hammingCode[parityPos - 1] = paritySum % 2;
         }
     }
-    
+
     // Создание кода Хэмминга
     public static List<int> GenerateHammingCode(List<int> dataBits)
     {
@@ -88,6 +91,7 @@ public class Solver
 
         return hammingCode;
     }
+
     // Добавление дополнительного бита для обнаружения двухкратных ошибок
     public static List<int> AddParityBitForDoubleErrorDetection(List<int> hammingCode)
     {
@@ -100,6 +104,7 @@ public class Solver
         hammingCode.Add(parityBit); // Добавляем бит четности в конец
         return hammingCode;
     }
+
     public static List<int> IntroduceRandomError(List<int> hammingCode, int maxErrors)
     {
         Random random = new Random();
@@ -116,16 +121,27 @@ public class Solver
             }
         }
 
-        Console.WriteLine($"Позиции ошибок: {string.Join(", ", errorPositions)}");
+        // Выводим позиции ошибок или сообщение о том, что ошибок нет
+        if (errorPositions.Count > 0)
+        {
+            Console.WriteLine($"Позиции ошибок: {string.Join(", ", errorPositions)}");
+        }
+        else
+        {
+            Console.WriteLine("Ошибки не были сгенерированы.");
+        }
+
         return hammingCode;
     }
+
     // Расчет синдрома ошибки
-    public static (int, bool) CalculateSyndrome(List<int> hammingCode)
+    public static (int, int) CalculateSyndrome(List<int> hammingCode)
     {
         int n = hammingCode.Count;
         int p = CalculateParityBits(n - 1); // исключаем дополнительный бит
         int syndrome = 0;
 
+        // Подсчет синдрома на основе контрольных битов
         for (int i = 0; i < p; i++)
         {
             int parityPos = 1 << i;
@@ -146,12 +162,28 @@ public class Solver
             }
         }
 
-        // Проверка на однократную ошибку с использованием дополнительного бита
-        bool singleError = hammingCode[^1] == CalculateOverallParity(hammingCode.GetRange(0, n - 1));
+        // Проверка на наличие однократной или двукратной ошибки
+        bool overallParityMatches = hammingCode[^1] == CalculateOverallParity(hammingCode.GetRange(0, n - 1));
 
-        return (syndrome, singleError);
+        // Определяем количество ошибок
+        int errorType;
+        if (syndrome == 0 && overallParityMatches)
+        {
+            errorType = 0; // Нет ошибок
+        }
+        else if (syndrome != 0 && overallParityMatches)
+        {
+            errorType = 2; // Двукратная ошибка
+        }
+        else
+        {
+            errorType = 1; // Однократная ошибка
+        }
+
+        return (syndrome, errorType);
     }
-    // Расчет общего контрольного бита
+
+    // Метод для расчета общего контрольного бита
     public static int CalculateOverallParity(List<int> hammingCode)
     {
         int parity = 0;
@@ -161,7 +193,7 @@ public class Solver
         }
         return parity;
     }
-    
+
     public static void CorrectError(List<int> hammingCode, int syndrome)
     {
         if (syndrome > 0 && syndrome <= hammingCode.Count)
@@ -169,5 +201,4 @@ public class Solver
             hammingCode[syndrome - 1] ^= 1; // Инвертируем ошибочный бит
         }
     }
-    
 }
